@@ -16,7 +16,8 @@ EXPOSE 8000
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8000/api/v1/health', timeout=5)" || exit 1
+    CMD python -c "import httpx, os; httpx.get('http://localhost:' + os.getenv('PORT', '10000') + '/api/v1/health', timeout=5)" || exit 1
 
-# Simple startup - Let Render use Procfile for actual startup command
-CMD ["echo", "Use Procfile for startup"]
+# Render fournit la variable PORT au démarrage du conteneur.
+# Le shell est utilisé ici uniquement pour permettre l'expansion de PORT.
+CMD ["sh", "-c", "exec gunicorn app.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-10000} --timeout 120 --access-logfile - --error-logfile -"]

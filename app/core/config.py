@@ -57,6 +57,13 @@ class Settings(BaseSettings):
             return ["*"]
         return [origin.strip() for origin in self.allowed_origins.split(",")]
 
+    @property
+    def async_database_url(self) -> str:
+        """Adapte l'URL PostgreSQL de Render au driver asyncpg."""
+        if self.database_url.startswith(("postgres://", "postgresql://")):
+            return "postgresql+asyncpg://" + self.database_url.split("://", 1)[1]
+        return self.database_url
+
 
 @lru_cache
 def get_settings() -> Settings:
