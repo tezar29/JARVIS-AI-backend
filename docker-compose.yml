@@ -1,0 +1,47 @@
+services:
+  backend:
+    build: .
+    container_name: jarvis-backend
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./app:/app/app
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: jarvis-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jarvis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jarvis}
+      POSTGRES_DB: ${POSTGRES_DB:-jarvis_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - jarvis_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jarvis -d jarvis_db"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: jarvis-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - jarvis_redis_data:/data
+
+volumes:
+  jarvis_pg_data:
+  jarvis_redis_data:
